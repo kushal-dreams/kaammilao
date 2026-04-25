@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<title>KaamMilao</title>
+
+<!-- ─── IMPORTANT: Replace with your Google OAuth Client ID ───────────────
+     Get one free at: https://console.cloud.google.com
+     Create project → APIs & Services → Credentials → OAuth 2.0 Client ID
+     Add your domain to Authorized JavaScript origins
+──────────────────────────────────────────────────────────────────────── -->
+<meta name="google-client-id" content="745437466982-v5kth87a4bdo1sn37h1iant9sgkiobgd.apps.googleusercontent.com"/>
+
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --orange:#D85A30;
+  --orange-dark:#993C1D;
+  --orange-light:#FAECE7;
+  --green:#1D9E75;
+  --bg:#0a0a0a;
+  --surface:#141414;
+  --surface2:#1e1e1e;
+  --border:rgba(255,255,255,0.08);
+  --text:#ffffff;
+  --text2:rgba(255,255,255,0.6);
+  --text3:rgba(255,255,255,0.35);
+  --radius:14px;
+  --nav-h:68px;
+}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow:hidden;}
+
+/* ─── SCREENS ─── */
+.screen{position:fixed;inset:0;display:none;flex-direction:column;background:var(--bg);}
+.screen.active{display:flex;}
+
+/* ─── SPLASH ─── */
+#splash{align-items:center;justify-content:center;background:linear-gradient(160deg,#1a0800 0%,#0a0a0a 60%);}
+.splash-logo{font-size:38px;font-weight:800;letter-spacing:-1px;margin-bottom:8px;}
+.splash-logo span{color:var(--orange);}
+.splash-sub{font-size:15px;color:var(--text2);margin-bottom:60px;}
+
+/* ─── ROLE SELECT ─── */
+#role-select{align-items:center;justify-content:center;padding:30px 24px;gap:20px;background:linear-gradient(160deg,#1a0800 0%,#0a0a0a 60%);}
+.role-head{text-align:center;margin-bottom:10px;}
+.role-head h1{font-size:26px;font-weight:700;margin-bottom:8px;}
+.role-head p{font-size:14px;color:var(--text2);line-height:1.5;}
+.role-cards{display:flex;flex-direction:column;gap:14px;width:100%;max-width:360px;}
+.role-card{padding:22px 20px;border-radius:18px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:16px;}
+.role-card:active{transform:scale(0.97);}
+.role-card.selected{border-color:var(--orange);background:rgba(216,90,48,0.1);}
+.role-emoji{font-size:34px;width:56px;height:56px;border-radius:14px;background:var(--surface2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.role-info h3{font-size:17px;font-weight:600;margin-bottom:4px;}
+.role-info p{font-size:13px;color:var(--text2);line-height:1.4;}
+.continue-btn{width:100%;max-width:360px;padding:15px;background:var(--orange);border:none;border-radius:14px;font-size:16px;font-weight:700;color:white;cursor:pointer;opacity:0.4;transition:opacity 0.2s;}
+.continue-btn.ready{opacity:1;}
+.continue-btn:active{opacity:0.85;}
+
+/* ─── SIGN IN ─── */
+#signin{align-items:center;justify-content:center;padding:30px 24px;gap:0;background:linear-gradient(160deg,#1a0800 0%,#0a0a0a 60%);}
+.signin-icon{font-size:52px;margin-bottom:16px;}
+.signin-title{font-size:24px;font-weight:700;margin-bottom:8px;text-align:center;}
+.signin-sub{font-size:14px;color:var(--text2);text-align:center;line-height:1.5;margin-bottom:40px;max-width:280px;}
+.g-btn{width:100%;max-width:320px;padding:15px 20px;background:white;border:none;border-radius:14px;font-size:15px;font-weight:600;color:#1a1a1a;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:12px;transition:opacity 0.2s;}
+.g-btn:active{opacity:0.85;}
+.g-logo{width:20px;height:20px;}
+.signin-skip{margin-top:16px;font-size:13px;color:var(--text3);cursor:pointer;padding:8px;}
+.signin-skip:hover{color:var(--text2);}
+
+/* ─── MAID APP ─── */
+#maid-app{flex-direction:column;}
+.maid-content{flex:1;overflow:hidden;position:relative;}
+
+/* ─── REEL FEED ─── */
+#maid-feed{position:absolute;inset:0;overflow:hidden;}
+.feed-top{position:absolute;top:0;left:0;right:0;z-index:20;padding:14px 18px 0;display:flex;justify-content:space-between;align-items:center;}
+.feed-logo{font-size:18px;font-weight:800;letter-spacing:-0.5px;}
+.feed-logo span{color:var(--orange);}
+.feed-loc{font-size:12px;color:rgba(255,255,255,0.65);background:rgba(255,255,255,0.1);padding:4px 12px;border-radius:20px;border:1px solid rgba(255,255,255,0.15);}
+
+.reel-stack{position:absolute;inset:0;display:flex;flex-direction:column;transition:transform 0.38s cubic-bezier(0.4,0,0.2,1);}
+.reel{width:100%;flex-shrink:0;position:relative;display:flex;flex-direction:column;justify-content:flex-end;}
+.reel-bg{position:absolute;inset:0;}
+.reel-gradient{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.95) 0%,rgba(0,0,0,0.4) 45%,rgba(0,0,0,0.15) 100%);}
+
+.wave-wrap{position:absolute;top:50%;left:50%;transform:translate(-50%,-60%);display:flex;flex-direction:column;align-items:center;gap:10px;}
+.wave-anim{display:flex;align-items:center;gap:4px;}
+.bar{width:4px;border-radius:4px;background:rgba(255,255,255,0.5);animation:wavebar 1.2s ease-in-out infinite;}
+.bar:nth-child(1){height:12px;animation-delay:0s;}
+.bar:nth-child(2){height:26px;animation-delay:0.12s;}
+.bar:nth-child(3){height:18px;animation-delay:0.24s;}
+.bar:nth-child(4){height:34px;animation-delay:0.08s;}
+.bar:nth-child(5){height:20px;animation-delay:0.2s;}
+.bar:nth-child(6){height:28px;animation-delay:0.36s;}
+.bar:nth-child(7){height:14px;animation-delay:0.04s;}
+.bar:nth-child(8){height:22px;animation-delay:0.28s;}
+@keyframes wavebar{0%,100%{transform:scaleY(0.3);}50%{transform:scaleY(1);}}
+.reel.paused .bar{animation-play-state:paused;}
+.wave-playing-label{font-size:12px;color:rgba(255,255,255,0.5);letter-spacing:1px;}
+
+.reel-content{position:relative;z-index:10;padding:0 16px 16px;}
+.poster-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.poster-av{width:42px;height:42px;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;flex-shrink:0;}
+.poster-name{font-size:15px;font-weight:700;color:white;}
+.poster-dist{font-size:12px;color:rgba(255,255,255,0.6);}
+.reel-title{font-size:18px;font-weight:700;color:white;line-height:1.3;margin-bottom:10px;}
+.reel-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.pill{font-size:12px;padding:5px 11px;border-radius:20px;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.9);border:1px solid rgba(255,255,255,0.2);}
+.pill.hot{background:var(--orange);border-color:var(--orange);color:white;}
+.apply-btn{width:100%;padding:15px;background:var(--orange);border:none;border-radius:14px;font-size:16px;font-weight:700;color:white;cursor:pointer;letter-spacing:0.2px;}
+.apply-btn:active{opacity:0.85;}
+.apply-hint{text-align:center;font-size:11px;color:rgba(255,255,255,0.4);margin-top:7px;}
+
+.side-btns{position:absolute;right:14px;bottom:120px;z-index:15;display:flex;flex-direction:column;gap:20px;align-items:center;}
+.side-btn{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+.side-ico{width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);display:flex;align-items:center;justify-content:center;font-size:20px;}
+.side-lbl{font-size:10px;color:rgba(255,255,255,0.55);}
+
+.prog-dots{position:absolute;right:5px;top:50%;transform:translateY(-50%);z-index:15;display:flex;flex-direction:column;gap:5px;}
+.pdot{width:3px;border-radius:3px;background:rgba(255,255,255,0.2);transition:all 0.3s;}
+.pdot.on{background:white;height:20px!important;}
+
+.swipe-hint{position:absolute;bottom:160px;left:50%;transform:translateX(-50%);z-index:14;display:flex;flex-direction:column;align-items:center;gap:5px;transition:opacity 0.4s;}
+.swipe-arr{font-size:22px;color:rgba(255,255,255,0.4);animation:bob 1.6s infinite;}
+@keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-7px);}}
+.swipe-txt{font-size:11px;color:rgba(255,255,255,0.35);}
+
+/* Apply success overlay */
+.apply-overlay{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,0.88);display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px;}
+.apply-overlay.show{display:flex;}
+.ao-circle{width:70px;height:70px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-size:30px;color:white;margin-bottom:18px;}
+.ao-title{font-size:22px;font-weight:700;margin-bottom:8px;text-align:center;}
+.ao-sub{font-size:14px;color:var(--text2);text-align:center;line-height:1.6;margin-bottom:24px;}
+.ao-steps{width:100%;background:rgba(255,255,255,0.06);border-radius:14px;padding:16px;margin-bottom:24px;}
+.ao-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;}
+.ao-step:last-child{margin:0;}
+.ao-num{width:22px;height:22px;border-radius:50%;background:var(--orange);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.ao-text{font-size:13px;color:rgba(255,255,255,0.75);line-height:1.5;}
+.ao-close{padding:14px 32px;background:white;border:none;border-radius:12px;font-size:15px;font-weight:700;color:#0a0a0a;cursor:pointer;}
+
+/* ─── CHAT LIST ─── */
+#maid-chat{position:absolute;inset:0;overflow-y:auto;padding:60px 0 0;}
+.chat-header{position:fixed;top:0;left:0;right:0;z-index:10;background:var(--bg);padding:16px 18px 12px;border-bottom:0.5px solid var(--border);}
+.chat-header h2{font-size:20px;font-weight:700;}
+.chat-list{padding:12px 0;}
+.chat-item{display:flex;align-items:center;gap:14px;padding:14px 18px;cursor:pointer;transition:background 0.15s;position:relative;}
+.chat-item:active{background:var(--surface);}
+.chat-av{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:white;flex-shrink:0;}
+.chat-info{flex:1;min-width:0;}
+.chat-name{font-size:15px;font-weight:600;margin-bottom:3px;}
+.chat-preview{font-size:13px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.chat-meta{display:flex;flex-direction:column;align-items:flex-end;gap:5px;}
+.chat-time{font-size:11px;color:var(--text3);}
+.chat-badge{background:var(--orange);color:white;font-size:11px;font-weight:700;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.chat-divider{height:0.5px;background:var(--border);margin:0 18px;}
+.empty-chat{display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:12px;color:var(--text3);font-size:15px;}
+
+/* ─── CHAT DETAIL ─── */
+#chat-detail{position:fixed;inset:0;z-index:50;background:var(--bg);display:none;flex-direction:column;}
+#chat-detail.show{display:flex;}
+.chat-d-header{padding:14px 16px;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.back-btn{font-size:22px;cursor:pointer;padding:4px 8px 4px 0;color:var(--orange);}
+.chat-d-av{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:white;flex-shrink:0;}
+.chat-d-name{font-size:15px;font-weight:600;}
+.chat-d-status{font-size:12px;color:var(--green);}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.msg{max-width:75%;padding:10px 14px;border-radius:18px;font-size:14px;line-height:1.5;}
+.msg.recv{background:var(--surface2);color:var(--text);border-bottom-left-radius:4px;align-self:flex-start;}
+.msg.sent{background:var(--orange);color:white;border-bottom-right-radius:4px;align-self:flex-end;}
+.msg-time{font-size:10px;color:var(--text3);margin-top:4px;}
+.msg-time.right{text-align:right;}
+.chat-input-row{padding:12px 14px;border-top:0.5px solid var(--border);display:flex;gap:10px;align-items:center;flex-shrink:0;}
+.chat-input{flex:1;background:var(--surface);border:0.5px solid var(--border);border-radius:24px;padding:10px 16px;font-size:14px;color:var(--text);outline:none;font-family:inherit;}
+.chat-send{width:42px;height:42px;border-radius:50%;background:var(--orange);border:none;color:white;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* ─── UPLOAD (POST JOB) ─── */
+#maid-upload{position:absolute;inset:0;overflow-y:auto;padding:60px 0 20px;}
+.upload-header{position:fixed;top:0;left:0;right:0;z-index:10;background:var(--bg);padding:16px 18px 12px;border-bottom:0.5px solid var(--border);}
+.upload-header h2{font-size:20px;font-weight:700;}
+.upload-body{padding:16px 18px;}
+.u-record{border:1.5px dashed var(--border);border-radius:18px;padding:32px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:20px;cursor:pointer;transition:border-color 0.2s;}
+.u-record:active{border-color:var(--orange);}
+.u-icon{font-size:40px;}
+.u-label{font-size:15px;font-weight:600;color:var(--text2);}
+.u-sub{font-size:13px;color:var(--text3);text-align:center;}
+.form-group{margin-bottom:16px;}
+.form-label{font-size:12px;color:var(--text2);margin-bottom:7px;display:block;letter-spacing:0.3px;}
+.form-input{width:100%;padding:13px 15px;background:var(--surface);border:0.5px solid var(--border);border-radius:12px;font-size:14px;color:var(--text);outline:none;font-family:inherit;}
+.form-input:focus{border-color:var(--orange);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.post-btn{width:100%;padding:15px;background:var(--orange);border:none;border-radius:14px;font-size:16px;font-weight:700;color:white;cursor:pointer;margin-top:8px;}
+.post-btn:active{opacity:0.85;}
+
+/* ─── PROFILE ─── */
+#maid-profile{position:absolute;inset:0;overflow-y:auto;}
+.profile-hero{padding:60px 20px 24px;display:flex;flex-direction:column;align-items:center;gap:12px;background:linear-gradient(180deg,rgba(216,90,48,0.15) 0%,transparent 100%);}
+.profile-av{width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:700;color:white;border:3px solid var(--orange);}
+.profile-name{font-size:22px;font-weight:700;}
+.profile-sub{font-size:14px;color:var(--text2);}
+.profile-badge{background:rgba(29,158,117,0.15);color:var(--green);font-size:12px;padding:4px 14px;border-radius:20px;border:1px solid rgba(29,158,117,0.3);}
+.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border);margin:0 16px 20px;border-radius:14px;overflow:hidden;}
+.stat-box{background:var(--surface);padding:16px 10px;text-align:center;}
+.stat-num{font-size:22px;font-weight:700;color:var(--orange);}
+.stat-lbl{font-size:11px;color:var(--text3);margin-top:2px;}
+.profile-section{margin:0 16px 16px;}
+.ps-label{font-size:12px;color:var(--text3);letter-spacing:0.5px;margin-bottom:10px;}
+.ps-card{background:var(--surface);border-radius:14px;overflow:hidden;}
+.ps-row{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:0.5px solid var(--border);}
+.ps-row:last-child{border:none;}
+.ps-key{font-size:14px;color:var(--text2);}
+.ps-val{font-size:14px;font-weight:500;}
+.ps-val.orange{color:var(--orange);}
+.logout-btn{margin:8px 16px 24px;width:calc(100% - 32px);padding:14px;background:var(--surface);border:0.5px solid var(--border);border-radius:14px;font-size:15px;color:var(--text2);cursor:pointer;font-family:inherit;}
+
+/* ─── HOUSEHOLD APP ─── */
+#house-app{flex-direction:column;}
+.house-content{flex:1;overflow:hidden;position:relative;}
+
+#house-post{position:absolute;inset:0;overflow-y:auto;padding:70px 0 20px;}
+#house-apps{position:absolute;inset:0;overflow-y:auto;padding:60px 0 0;}
+#house-chat{position:absolute;inset:0;overflow-y:auto;padding:60px 0 0;}
+#house-profile{position:absolute;inset:0;overflow-y:auto;}
+
+.house-header{position:fixed;top:0;left:0;right:0;z-index:10;background:var(--bg);padding:16px 18px 12px;border-bottom:0.5px solid var(--border);}
+.house-header h2{font-size:20px;font-weight:700;}
+
+/* Applications */
+.app-card{background:var(--surface);border-radius:14px;margin:12px 16px 0;padding:16px;border:0.5px solid var(--border);}
+.app-top{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.app-av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:white;flex-shrink:0;}
+.app-name{font-size:15px;font-weight:600;margin-bottom:2px;}
+.app-meta{font-size:12px;color:var(--text2);}
+.app-actions{display:flex;gap:8px;margin-top:12px;}
+.btn-accept{flex:1;padding:10px;background:var(--orange);border:none;border-radius:10px;font-size:14px;font-weight:600;color:white;cursor:pointer;font-family:inherit;}
+.btn-skip{flex:1;padding:10px;background:var(--surface2);border:0.5px solid var(--border);border-radius:10px;font-size:14px;color:var(--text2);cursor:pointer;font-family:inherit;}
+.accepted-reveal{background:rgba(29,158,117,0.1);border:1px solid rgba(29,158,117,0.3);border-radius:10px;padding:12px;margin-top:10px;}
+.accepted-label{font-size:12px;color:var(--green);margin-bottom:4px;}
+.accepted-phone{font-size:18px;font-weight:700;color:var(--text);}
+
+/* ─── BOTTOM NAV ─── */
+.bottom-nav{height:var(--nav-h);background:var(--surface);border-top:0.5px solid var(--border);display:flex;align-items:center;justify-content:space-around;padding:0 10px 8px;flex-shrink:0;position:relative;}
+.nav-btn{display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;padding:8px 16px;border-radius:12px;transition:all 0.15s;border:none;background:transparent;flex:1;}
+.nav-ico{font-size:22px;line-height:1;}
+.nav-lbl{font-size:10px;color:var(--text3);}
+.nav-btn.active .nav-ico{filter:drop-shadow(0 0 6px var(--orange));}
+.nav-btn.active .nav-lbl{color:var(--orange);}
+.nav-plus{width:54px;height:54px;border-radius:50%;background:var(--orange);border:none;display:flex;align-items:center;justify-content:center;font-size:26px;color:white;cursor:pointer;box-shadow:0 4px 20px rgba(216,90,48,0.5);margin-top:-24px;flex-shrink:0;}
+
+/* ─── TOAST ─── */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:rgba(30,30,30,0.95);color:white;padding:10px 20px;border-radius:24px;font-size:13px;z-index:200;opacity:0;transition:opacity 0.3s;border:0.5px solid var(--border);white-space:nowrap;}
+.toast.show{opacity:1;}
+
+/* Scrollbar hide */
+::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+
+<!-- ════ SPLASH ════ -->
+<div id="splash" class="screen active">
+  <div class="splash-logo">Kaam<span>Milao</span></div>
+  <div class="splash-sub">Kaam dhundho. Kaam do.</div>
+</div>
+
+<!-- ════ ROLE SELECT ════ -->
+<div id="role-select" class="screen">
+  <div class="role-head">
+    <h1>Aap kaun hain?</h1>
+    <p>Apna role chuniye taaki hum<br/>aapke liye sahi experience banayein</p>
+  </div>
+  <div class="role-cards">
+    <div class="role-card" id="rc-maid" onclick="selectRole('maid')">
+      <div class="role-emoji">👩‍🍳</div>
+      <div class="role-info">
+        <h3>Kaam Dhundhna Hai</h3>
+        <p>Main ghar ka kaam karti hoon — cooking, safai, baby care ya aur kuch</p>
+      </div>
+    </div>
+    <div class="role-card" id="rc-house" onclick="selectRole('house')">
+      <div class="role-emoji">🏠</div>
+      <div class="role-info">
+        <h3>Kaam Dena Hai</h3>
+        <p>Mujhe apne ghar ke liye madad chahiye — cook, bai ya nanny</p>
+      </div>
+    </div>
+  </div>
+  <button class="continue-btn" id="role-continue" onclick="goToSignin()">Aage Badhein →</button>
+</div>
+
+<!-- ════ SIGN IN ════ -->
+<div id="signin" class="screen">
+  <div class="signin-icon">🔐</div>
+  <div class="signin-title">Login karein</div>
+  <div class="signin-sub">Aapka data safe rahega.<br/>Sirf aapke aas-paas ke log dikhenge.</div>
+
+  <!-- Real Google Sign In Button (works when Client ID is set) -->
+  <div id="g-signin-btn"></div>
+
+  <!-- Fallback manual button (always visible as backup) -->
+  <button class="g-btn" id="manual-google-btn" onclick="mockGoogleLogin()" style="max-width:320px;margin-top:12px;">
+    <svg class="g-logo" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+    Google se Login karein
+  </button>
+
+  <div class="signin-skip" onclick="mockGoogleLogin()">Demo ke liye skip karein →</div>
+</div>
+
+<!-- ════ MAID APP ════ -->
+<div id="maid-app" class="screen">
+  <div class="maid-content">
+
+    <!-- FEED -->
+    <div id="maid-feed" style="display:none;">
+      <div class="feed-top">
+        <div class="feed-logo">Kaam<span>Milao</span></div>
+        <div class="feed-loc">📍 Malviya Nagar</div>
+      </div>
+      <div class="reel-stack" id="reel-stack">
+        <!-- Reels injected by JS -->
+      </div>
+      <div class="prog-dots" id="prog-dots"></div>
+      <div class="swipe-hint" id="swipe-hint">
+        <div class="swipe-arr">↑</div>
+        <div class="swipe-txt">Upar swipe karein</div>
+      </div>
+    </div>
+
+    <!-- CHAT LIST -->
+    <div id="maid-chat" style="display:none;">
+      <div class="chat-header"><h2>Baatein 💬</h2></div>
+      <div class="chat-list" id="chat-list-items"></div>
+    </div>
+
+    <!-- UPLOAD / POST -->
+    <div id="maid-upload" style="display:none;">
+      <div class="upload-header"><h2>Naukri Post Karein</h2></div>
+      <div class="upload-body">
+        <div class="u-record" onclick="showToast('Voice recording aayega app mein! 🎙️')">
+          <div class="u-icon">🎙️</div>
+          <div class="u-label">Voice note record karein</div>
+          <div class="u-sub">Apni zarooratein bolke batayein — likhne ki zaroorat nahi</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">KAAM KA PRAKAR</label>
+          <select class="form-input" id="u-type">
+            <option>Cooking</option><option>Safai</option><option>Baby Care</option>
+            <option>Elderly Care</option><option>Bartan Majna</option><option>Poora Ghar</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">AAPKA ILAKA</label>
+          <input class="form-input" id="u-area" placeholder="Jaise: Malviya Nagar, Delhi" />
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">MAHINA KITNA CHAHIYE</label>
+            <input class="form-input" id="u-salary" placeholder="₹ 4000" type="number" />
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">KAB KAM KAREIN</label>
+            <select class="form-input" id="u-time">
+              <option>Subah 6–8</option><option>Subah 8–10</option><option>Subah 10–12</option>
+              <option>Dopahar</option><option>Poora din</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:16px;">
+          <label class="form-label">KOI KHAAS BAAT</label>
+          <input class="form-input" id="u-note" placeholder="Jaise: Vegetarian khana banana aata hai..." />
+        </div>
+        <button class="post-btn" onclick="postJob()">Post Karein ✓</button>
+      </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="maid-profile" style="display:none;">
+      <div class="profile-hero">
+        <div class="profile-av" id="maid-profile-av" style="background:var(--orange);">U</div>
+        <div class="profile-name" id="maid-profile-name">User</div>
+        <div class="profile-sub" id="maid-profile-sub">Malviya Nagar, Delhi</div>
+        <div class="profile-badge">✓ Available for Work</div>
+      </div>
+      <div class="profile-stats">
+        <div class="stat-box"><div class="stat-num">12</div><div class="stat-lbl">Apply kiye</div></div>
+        <div class="stat-box"><div class="stat-num">3</div><div class="stat-lbl">Accept hue</div></div>
+        <div class="stat-box"><div class="stat-num">5★</div><div class="stat-lbl">Rating</div></div>
+      </div>
+      <div class="profile-section">
+        <div class="ps-label">AAPKI JAANKARI</div>
+        <div class="ps-card">
+          <div class="ps-row"><span class="ps-key">Kaam</span><span class="ps-val">Cooking, Safai</span></div>
+          <div class="ps-row"><span class="ps-key">Anubhav</span><span class="ps-val">5 saal</span></div>
+          <div class="ps-row"><span class="ps-key">Ilaka</span><span class="ps-val">5 km tak</span></div>
+          <div class="ps-row"><span class="ps-key">Phone</span><span class="ps-val orange" id="maid-phone">+91 ••••••••••</span></div>
+        </div>
+      </div>
+      <div class="profile-section">
+        <div class="ps-label">ACCOUNT</div>
+        <div class="ps-card">
+          <div class="ps-row"><span class="ps-key">Email</span><span class="ps-val orange" id="maid-email">—</span></div>
+          <div class="ps-row"><span class="ps-key">Login se</span><span class="ps-val">Google</span></div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+  </div>
+
+  <!-- Maid Bottom Nav -->
+  <div class="bottom-nav" id="maid-nav">
+    <button class="nav-btn active" id="mn-feed" onclick="maidNav('feed')">
+      <span class="nav-ico">🏠</span><span class="nav-lbl">Feed</span>
+    </button>
+    <button class="nav-btn" id="mn-chat" onclick="maidNav('chat')">
+      <span class="nav-ico">💬</span><span class="nav-lbl">Chat</span>
+    </button>
+    <button class="nav-plus" onclick="maidNav('upload')">＋</button>
+    <button class="nav-btn" id="mn-profile" onclick="maidNav('profile')">
+      <span class="nav-ico">👤</span><span class="nav-lbl">Profile</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════ HOUSEHOLD APP ════ -->
+<div id="house-app" class="screen">
+  <div class="house-content">
+
+    <!-- POST JOB -->
+    <div id="house-post" style="display:none;">
+      <div class="house-header"><h2>Naukri Post Karein 📢</h2></div>
+      <div style="padding:0 16px;">
+        <div class="u-record" onclick="showToast('Voice recording aayega app mein! 🎙️')" style="margin-bottom:20px;">
+          <div class="u-icon">🎙️</div>
+          <div class="u-label">Voice note record karein</div>
+          <div class="u-sub">Bolke batayein kya chahiye — ek reel ban jaayegi</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">KAAM KA PRAKAR</label>
+          <select class="form-input"><option>Cooking</option><option>Safai</option><option>Baby Care</option><option>Elderly Care</option><option>Poora Ghar</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">GHAR KA PATA / ILAKA</label>
+          <input class="form-input" placeholder="Jaise: Vasant Kunj, Block C" />
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="margin:0">
+            <label class="form-label">TANKHWA</label>
+            <input class="form-input" placeholder="₹ 5000" type="number"/>
+          </div>
+          <div class="form-group" style="margin:0">
+            <label class="form-label">DIN</label>
+            <select class="form-input"><option>Daily</option><option>Mon–Sat</option><option>Mon–Fri</option><option>Weekend</option></select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-top:16px;">
+          <label class="form-label">TIMING</label>
+          <select class="form-input"><option>Subah 7–9</option><option>Subah 8–10</option><option>Subah 9–11</option><option>Dopahar</option><option>Poora din</option></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">KHAAS ZAROORAT</label>
+          <input class="form-input" placeholder="Jaise: Sirf vegetarian khana..."/>
+        </div>
+        <button class="post-btn" onclick="housePostJob()">Reel Post Karein ✓</button>
+      </div>
+    </div>
+
+    <!-- APPLICATIONS -->
+    <div id="house-apps" style="display:none;">
+      <div class="house-header"><h2>Aavedanein 📋</h2></div>
+      <div id="house-apps-list" style="padding-bottom:20px;"></div>
+    </div>
+
+    <!-- HOUSEHOLD CHAT -->
+    <div id="house-chat" style="display:none;">
+      <div class="house-header"><h2>Baatein 💬</h2></div>
+      <div class="chat-list" id="house-chat-list"></div>
+    </div>
+
+    <!-- HOUSEHOLD PROFILE -->
+    <div id="house-profile" style="display:none;">
+      <div class="profile-hero">
+        <div class="profile-av" id="house-profile-av" style="background:#378ADD;">U</div>
+        <div class="profile-name" id="house-profile-name">User</div>
+        <div class="profile-sub">Vasant Kunj, New Delhi</div>
+        <div class="profile-badge" style="background:rgba(55,138,221,0.15);color:#378ADD;border-color:rgba(55,138,221,0.3);">🏠 Household Account</div>
+      </div>
+      <div class="profile-stats">
+        <div class="stat-box"><div class="stat-num">2</div><div class="stat-lbl">Post kiye</div></div>
+        <div class="stat-box"><div class="stat-num">7</div><div class="stat-lbl">Applications</div></div>
+        <div class="stat-box"><div class="stat-num">1</div><div class="stat-lbl">Hired</div></div>
+      </div>
+      <div class="profile-section">
+        <div class="ps-label">ACCOUNT</div>
+        <div class="ps-card">
+          <div class="ps-row"><span class="ps-key">Email</span><span class="ps-val orange" id="house-email">—</span></div>
+          <div class="ps-row"><span class="ps-key">Login se</span><span class="ps-val">Google</span></div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+
+  </div>
+
+  <!-- Household Bottom Nav -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="hn-post" onclick="houseNav('post')">
+      <span class="nav-ico">📢</span><span class="nav-lbl">Post</span>
+    </button>
+    <button class="nav-btn" id="hn-apps" onclick="houseNav('apps')">
+      <span class="nav-ico">📋</span><span class="nav-lbl">Applications</span>
+    </button>
+    <button class="nav-btn" id="hn-chat" onclick="houseNav('chat')">
+      <span class="nav-ico">💬</span><span class="nav-lbl">Chat</span>
+    </button>
+    <button class="nav-btn" id="hn-profile" onclick="houseNav('profile')">
+      <span class="nav-ico">👤</span><span class="nav-lbl">Profile</span>
+    </button>
+  </div>
+</div>
+
+<!-- ════ CHAT DETAIL (shared overlay) ════ -->
+<div id="chat-detail" class="screen">
+  <div class="chat-d-header">
+    <div class="back-btn" onclick="closeChat()">‹</div>
+    <div class="chat-d-av" id="cd-av" style="background:var(--orange);">SK</div>
+    <div>
+      <div class="chat-d-name" id="cd-name">Sunita Khanna</div>
+      <div class="chat-d-status">Online</div>
+    </div>
+  </div>
+  <div class="chat-messages" id="cd-messages"></div>
+  <div class="chat-input-row">
+    <input class="chat-input" id="cd-input" placeholder="Message likhein..." onkeydown="if(event.key==='Enter')sendMsg()"/>
+    <button class="chat-send" onclick="sendMsg()">↑</button>
+  </div>
+</div>
+
+<!-- Apply Success Overlay -->
+<div class="apply-overlay" id="apply-overlay">
+  <div class="ao-circle">✓</div>
+  <div class="ao-title">Request bhej diya!</div>
+  <div class="ao-sub">Ghar wale dekhenge aur accept karenge.<br/>Tab aapko unka number milega.</div>
+  <div class="ao-steps">
+    <div class="ao-step"><div class="ao-num">1</div><div class="ao-text">Ghar wale aapki profile dekhenge</div></div>
+    <div class="ao-step"><div class="ao-num">2</div><div class="ao-text">Accept karne par dono ka number share hoga</div></div>
+    <div class="ao-step"><div class="ao-num">3</div><div class="ao-text">Seedha baat karo, kaam pakka karo</div></div>
+  </div>
+  <button class="ao-close" onclick="closeApplyOverlay()">Theek hai ✓</button>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STATE ─────────────────────────────────────────────────────────
+var state = {
+  role: null,
+  user: null,
+  maidTab: 'feed',
+  houseTab: 'post',
+  reelIndex: 0,
+  reelTotal: 5,
+  chatOpen: null,
+  acceptedApps: {},
+  skippedApps: {},
+  chatMessages: {}
+};
+
+// ─── REEL DATA ──────────────────────────────────────────────────────
+var reels = [
+  { bg:'linear-gradient(135deg,#1a0800,#3d1800)', av:'SK', avColor:'#D85A30', name:'Sunita Khanna', dist:'0.8 km', area:'Vasant Kunj, Block C', title:'"Hume ek achhi cook chahiye — subah 8 se 10 baje"', pills:['Cooking','₹5,000/mo','Mon–Sat','2 adults + 1 child'] },
+  { bg:'linear-gradient(135deg,#001a0f,#003d22)', av:'RM', avColor:'#1D9E75', name:'Rajiv Mehta', dist:'1.2 km', area:'Green Park Extension', title:'"2BHK hai, safai aur bartan — roz subah 7 baje"', pills:['Safai + Bartan','₹4,000/mo','Daily','7am–9am'] },
+  { bg:'linear-gradient(135deg,#0a001a,#220044)', av:'PA', avColor:'#7F77DD', name:'Preeti Arora', dist:'2.1 km', area:'Saket, Sector 6', title:'"2 saal ka baccha hai, full-time nanny chahiye"', pills:['Baby Care','₹7,500/mo','Mon–Fri','9am–6pm'] },
+  { bg:'linear-gradient(135deg,#001518,#003040)', av:'VG', avColor:'#378ADD', name:'Vinay Gupta', dist:'3.0 km', area:'Hauz Khas Village', title:'"3BHK ka poora kaam — khana bhi banana hoga"', pills:['Poora Ghar','₹8,000/mo','Daily','Full day'] },
+  { bg:'linear-gradient(135deg,#1a1400,#3d3000)', av:'NS', avColor:'#BA7517', name:'Neha Sharma', dist:'4.2 km', area:'Safdarjung Enclave', title:'"Budhape mein 2 log hain, subah ki madad chahiye"', pills:['Elderly Care','₹6,000/mo','Daily','Morning'] }
+];
+
+// Chat data per contact
+var chatData = {
+  'Sunita Khanna': [
+    { type:'recv', text:'Namaste! Aapne apply kiya, bahut shukriya.', time:'10:32 AM' },
+    { type:'sent', text:'Haan ji, mujhe cooking ka 6 saal ka anubhav hai.', time:'10:35 AM' },
+    { type:'recv', text:'Kya aap kal subah 8 baje aa sakti hain milne?', time:'10:38 AM' }
+  ],
+  'Rajiv Mehta': [
+    { type:'recv', text:'Aapka application mil gaya. Kya aap weekends bhi kar sakti hain?', time:'Yesterday' }
+  ]
+};
+
+var houseApplicants = [
+  { av:'KD', avColor:'#D85A30', name:'Kamla Devi', meta:'Cooking · 7 saal · Malviya Nagar · 1.1 km', phone:'+91 98110 43721' },
+  { av:'SR', avColor:'#1D9E75', name:'Sunita Rawat', meta:'Cooking, Safai · 4 saal · Safdarjung · 2.4 km', phone:'+91 97234 56789' },
+  { av:'MB', avColor:'#7F77DD', name:'Meena Bai', meta:'Cooking · 10 saal · Hauz Khas · 3.0 km', phone:'+91 96543 21098' }
+];
+
+// ─── SPLASH → ROLE ──────────────────────────────────────────────────
+setTimeout(function(){ show('role-select'); }, 1400);
+
+// ─── ROLE SELECT ────────────────────────────────────────────────────
+function selectRole(r) {
+  state.role = r;
+  document.getElementById('rc-maid').classList.toggle('selected', r==='maid');
+  document.getElementById('rc-house').classList.toggle('selected', r==='house');
+  document.getElementById('role-continue').classList.add('ready');
+}
+
+function goToSignin() {
+  if(!state.role) return;
+  show('signin');
+  initGoogleSignin();
+}
+
+// ─── GOOGLE SIGN IN ─────────────────────────────────────────────────
+function initGoogleSignin() {
+  var clientId = document.querySelector('meta[name="google-client-id"]').content;
+  if(!window.google || clientId === 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com') return;
+  try {
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: handleGoogleResponse
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('g-signin-btn'),
+      { theme:'outline', size:'large', width:320, text:'signin_with', shape:'rectangular', logo_alignment:'left' }
+    );
+  } catch(e) { /* Google not ready yet */ }
+}
+
+function handleGoogleResponse(response) {
+  var payload = parseJwt(response.credential);
+  state.user = { name: payload.name, email: payload.email, picture: payload.picture, initials: getInitials(payload.name) };
+  enterApp();
+}
+
+function mockGoogleLogin() {
+  state.user = { name:'Demo User', email:'demo@gmail.com', initials:'DU', picture:null };
+  enterApp();
+}
+
+function parseJwt(token) {
+  try { return JSON.parse(atob(token.split('.')[1])); } catch(e) { return {}; }
+}
+
+function getInitials(name) {
+  if(!name) return 'U';
+  return name.split(' ').map(function(w){ return w[0]; }).slice(0,2).join('').toUpperCase();
+}
+
+// ─── ENTER APP ──────────────────────────────────────────────────────
+function enterApp() {
+  if(state.role === 'maid') {
+    buildReels();
+    buildChatList();
+    setProfileInfo('maid');
+    show('maid-app');
+    maidNav('feed');
+  } else {
+    buildHouseApps();
+    buildHouseChat();
+    setProfileInfo('house');
+    show('house-app');
+    houseNav('post');
+  }
+}
+
+function setProfileInfo(who) {
+  var u = state.user;
+  if(!u) return;
+  var initials = u.initials || 'U';
+  var name = u.name || 'User';
+  var email = u.email || '—';
+  if(who === 'maid') {
+    document.getElementById('maid-profile-av').textContent = initials;
+    document.getElementById('maid-profile-name').textContent = name;
+    document.getElementById('maid-email').textContent = email;
+  } else {
+    document.getElementById('house-profile-av').textContent = initials;
+    document.getElementById('house-profile-name').textContent = name;
+    document.getElementById('house-email').textContent = email;
+  }
+}
+
+// ─── REELS ──────────────────────────────────────────────────────────
+function buildReels() {
+  var stack = document.getElementById('reel-stack');
+  var h = window.innerHeight - 68;
+  stack.innerHTML = '';
+  reels.forEach(function(r, i) {
+    var bars = '<div class="bar"></div>'.repeat(8);
+    var pillHtml = r.pills.map(function(p, pi) {
+      return '<span class="pill' + (pi===0?' hot':'') + '">' + p + '</span>';
+    }).join('');
+    stack.innerHTML += `
+    <div class="reel" id="reel-${i}" style="height:${h}px;">
+      <div class="reel-bg" style="background:${r.bg};">
+        <div class="wave-wrap" id="ww${i}"><div class="wave-anim">${bars}</div><div style="font-size:11px;color:rgba(255,255,255,0.4);letter-spacing:1px;margin-top:4px;">▶ AWAAZ CHAL RAHI HAI</div></div>
+      </div>
+      <div class="reel-gradient"></div>
+      <div class="side-btns">
+        <div class="side-btn" onclick="toggleSave(${i})"><div class="side-ico" id="sv${i}">🔖</div><div class="side-lbl">Save</div></div>
+        <div class="side-btn"><div class="side-ico">📤</div><div class="side-lbl">Share</div></div>
+      </div>
+      <div class="reel-content">
+        <div class="poster-row">
+          <div class="poster-av" style="background:${r.avColor};">${r.av}</div>
+          <div><div class="poster-name">${r.name}</div><div class="poster-dist">${r.area} · ${r.dist}</div></div>
+        </div>
+        <div class="reel-title">${r.title}</div>
+        <div class="reel-pills">${pillHtml}</div>
+        <button class="apply-btn" onclick="applyReel(${i})">Apply — Ek Tap Mein 👆</button>
+        <div class="apply-hint">Contact tabhi milega jab ye accept karein</div>
+      </div>
+    </div>`;
+  });
+  buildProgDots();
+  setupSwipe();
+}
+
+function buildProgDots() {
+  var d = document.getElementById('prog-dots');
+  d.innerHTML = '';
+  reels.forEach(function(_, i) {
+    var dot = document.createElement('div');
+    dot.className = 'pdot' + (i===0?' on':'');
+    dot.style.height = i===0?'20px':'6px';
+    d.appendChild(dot);
+  });
+}
+
+function goToReel(idx) {
+  if(idx < 0 || idx >= reels.length) return;
+  state.reelIndex = idx;
+  var h = window.innerHeight - 68;
+  document.getElementById('reel-stack').style.transform = 'translateY(-' + (idx * h) + 'px)';
+  var dots = document.querySelectorAll('.pdot');
+  dots.forEach(function(d, i) { d.className = 'pdot' + (i===idx?' on':''); d.style.height = i===idx?'20px':'6px'; });
+  if(idx > 0) document.getElementById('swipe-hint').style.opacity = '0';
+  for(var i=0;i<reels.length;i++) {
+    var ww = document.getElementById('ww'+i);
+    if(ww) ww.querySelector('.wave-anim').style.animationPlayState = i===idx?'running':'paused';
+  }
+}
+
+var swipeStartY = 0, swipeStartX = 0, swiping = false;
+function setupSwipe() {
+  var feed = document.getElementById('maid-feed');
+  feed.addEventListener('touchstart', function(e){ swipeStartY=e.touches[0].clientY; swipeStartX=e.touches[0].clientX; swiping=true; },{passive:true});
+  feed.addEventListener('touchend', function(e){
+    if(!swiping) return;
+    var dy = swipeStartY - e.changedTouches[0].clientY;
+    var dx = Math.abs(swipeStartX - e.changedTouches[0].clientX);
+    if(Math.abs(dy) > 40 && Math.abs(dy) > dx) {
+      if(dy > 0) goToReel(state.reelIndex + 1);
+      else goToReel(state.reelIndex - 1);
+    }
+    swiping = false;
+  },{passive:true});
+  feed.addEventListener('wheel', function(e){
+    e.preventDefault();
+    if(e.deltaY > 25) goToReel(state.reelIndex+1);
+    else if(e.deltaY < -25) goToReel(state.reelIndex-1);
+  },{passive:false});
+}
+
+function applyReel(i) {
+  document.getElementById('apply-overlay').classList.add('show');
+}
+function closeApplyOverlay() {
+  document.getElementById('apply-overlay').classList.remove('show');
+  goToReel(Math.min(state.reelIndex+1, reels.length-1));
+}
+function toggleSave(i) {
+  var el = document.getElementById('sv'+i);
+  el.textContent = el.textContent === '🔖' ? '✅' : '🔖';
+  showToast(el.textContent === '✅' ? 'Saved! ✅' : 'Unsaved');
+}
+
+// ─── CHAT ───────────────────────────────────────────────────────────
+var chatContacts = [
+  { av:'SK', avColor:'#D85A30', name:'Sunita Khanna', preview:'Kal 8 baje aa sakti hain?', time:'10:38 AM', badge:2 },
+  { av:'RM', avColor:'#1D9E75', name:'Rajiv Mehta', preview:'Weekends bhi?', time:'Yesterday', badge:1 }
+];
+
+function buildChatList() {
+  var el = document.getElementById('chat-list-items');
+  if(chatContacts.length === 0) { el.innerHTML = '<div class="empty-chat">💬 Abhi koi message nahi</div>'; return; }
+  el.innerHTML = chatContacts.map(function(c, i) {
+    return `<div class="chat-item" onclick="openChat('${c.name}','${c.av}','${c.avColor}')">
+      <div class="chat-av" style="background:${c.avColor};">${c.av}</div>
+      <div class="chat-info"><div class="chat-name">${c.name}</div><div class="chat-preview">${c.preview}</div></div>
+      <div class="chat-meta"><div class="chat-time">${c.time}</div>${c.badge?'<div class="chat-badge">'+c.badge+'</div>':''}</div>
+    </div>${i<chatContacts.length-1?'<div class="chat-divider"></div>':''}`;
+  }).join('');
+}
+
+function buildHouseChat() {
+  var el = document.getElementById('house-chat-list');
+  el.innerHTML = chatContacts.map(function(c) {
+    return `<div class="chat-item" onclick="openChat('${c.name}','${c.av}','${c.avColor}')">
+      <div class="chat-av" style="background:${c.avColor};">${c.av}</div>
+      <div class="chat-info"><div class="chat-name">${c.name}</div><div class="chat-preview">${c.preview}</div></div>
+      <div class="chat-meta"><div class="chat-time">${c.time}</div>${c.badge?'<div class="chat-badge">'+c.badge+'</div>':''}</div>
+    </div><div class="chat-divider"></div>`;
+  }).join('');
+}
+
+function openChat(name, av, avColor) {
+  state.chatOpen = name;
+  document.getElementById('cd-name').textContent = name;
+  document.getElementById('cd-av').textContent = av;
+  document.getElementById('cd-av').style.background = avColor;
+  var msgs = chatData[name] || [];
+  var html = msgs.map(function(m) {
+    return `<div><div class="msg ${m.type}">${m.text}</div><div class="msg-time${m.type==='sent'?' right':''}">${m.time}</div></div>`;
+  }).join('');
+  document.getElementById('cd-messages').innerHTML = html;
+  document.getElementById('chat-detail').classList.add('show');
+  setTimeout(function(){ var el=document.getElementById('cd-messages'); el.scrollTop=el.scrollHeight; },100);
+}
+
+function closeChat() {
+  document.getElementById('chat-detail').classList.remove('show');
+  state.chatOpen = null;
+}
+
+function sendMsg() {
+  var input = document.getElementById('cd-input');
+  var txt = input.value.trim();
+  if(!txt) return;
+  var now = new Date();
+  var time = now.getHours() + ':' + String(now.getMinutes()).padStart(2,'0');
+  if(!chatData[state.chatOpen]) chatData[state.chatOpen] = [];
+  chatData[state.chatOpen].push({ type:'sent', text:txt, time:time });
+  var msgs = document.getElementById('cd-messages');
+  msgs.innerHTML += `<div><div class="msg sent">${txt}</div><div class="msg-time right">${time}</div></div>`;
+  input.value = '';
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+// ─── HOUSEHOLD ───────────────────────────────────────────────────────
+function buildHouseApps() {
+  var el = document.getElementById('house-apps-list');
+  el.innerHTML = houseApplicants.map(function(a, i) {
+    return `<div class="app-card" id="happ${i}">
+      <div class="app-top">
+        <div class="app-av" style="background:${a.avColor};">${a.av}</div>
+        <div><div class="app-name">${a.name}</div><div class="app-meta">${a.meta}</div></div>
+      </div>
+      <div class="app-actions" id="happ-act${i}">
+        <button class="btn-skip" onclick="skipApp(${i})">Skip ✕</button>
+        <button class="btn-accept" onclick="acceptApp(${i})">Accept ✓</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function acceptApp(i) {
+  var a = houseApplicants[i];
+  document.getElementById('happ-act'+i).innerHTML = `<div class="accepted-reveal"><div class="accepted-label">✓ Accept kar liya — Contact number:</div><div class="accepted-phone">${a.phone}</div></div>`;
+  showToast(a.name + ' ka number reveal ho gaya! ✓');
+}
+
+function skipApp(i) {
+  var card = document.getElementById('happ'+i);
+  card.style.opacity = '0.35';
+  document.getElementById('happ-act'+i).innerHTML = '<div style="text-align:center;font-size:13px;color:var(--text3);padding:8px;">Skipped</div>';
+}
+
+function housePostJob() {
+  showToast('Reel post ho gaya! Naukri live hai ✓');
+  setTimeout(function(){ houseNav('apps'); }, 800);
+}
+
+// ─── NAV ─────────────────────────────────────────────────────────────
+function maidNav(tab) {
+  state.maidTab = tab;
+  ['feed','chat','upload','profile'].forEach(function(t){
+    var el = document.getElementById('maid-'+t);
+    if(el) el.style.display = 'none';
+  });
+  var target = document.getElementById('maid-'+tab);
+  if(target) target.style.display = 'block';
+  ['feed','chat','profile'].forEach(function(t){
+    var btn = document.getElementById('mn-'+t);
+    if(btn) btn.className = 'nav-btn' + (t===tab?' active':'');
+  });
+  if(tab==='feed') { setTimeout(function(){ goToReel(state.reelIndex); },50); }
+  if(tab==='upload') {
+    ['feed','chat','upload','profile'].forEach(function(t){
+      var el = document.getElementById('maid-'+t);
+      if(el) el.style.display = 'none';
+    });
+    document.getElementById('maid-upload').style.display = 'block';
+    ['feed','chat','profile'].forEach(function(t){
+      var btn = document.getElementById('mn-'+t);
+      if(btn) btn.className = 'nav-btn';
+    });
+  }
+}
+
+function houseNav(tab) {
+  state.houseTab = tab;
+  ['post','apps','chat','profile'].forEach(function(t){
+    var el = document.getElementById('house-'+t);
+    if(el) el.style.display = 'none';
+  });
+  var target = document.getElementById('house-'+tab);
+  if(target) target.style.display = 'block';
+  ['post','apps','chat','profile'].forEach(function(t){
+    var btn = document.getElementById('hn-'+t);
+    if(btn) btn.className = 'nav-btn' + (t===tab?' active':'');
+  });
+}
+
+function postJob() {
+  showToast('Aapki zaroorat post ho gayi! ✓');
+  setTimeout(function(){ maidNav('feed'); },800);
+}
+
+// ─── UTILS ───────────────────────────────────────────────────────────
+function show(id) {
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  var el = document.getElementById(id);
+  if(el) el.classList.add('active');
+}
+
+function showToast(msg) {
+  var t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(function(){ t.classList.remove('show'); }, 2600);
+}
+
+function logout() {
+  state.user = null; state.role = null;
+  show('role-select');
+  document.getElementById('rc-maid').classList.remove('selected');
+  document.getElementById('rc-house').classList.remove('selected');
+  document.getElementById('role-continue').classList.remove('ready');
+}
+
+window.addEventListener('resize', function(){
+  if(state.role==='maid' && state.maidTab==='feed') { buildReels(); goToReel(state.reelIndex); }
+});
+</script>
+</body>
+</html>
